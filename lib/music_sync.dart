@@ -15,21 +15,31 @@ class AudioAmplitudePage extends StatefulWidget {
   _AudioAmplitudePageState createState() => _AudioAmplitudePageState();
 }
 
-class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
+class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTickerProviderStateMixin {
   late AudioPlayer _audioPlayer;
   late PlayerController _waveformsController;
   List<double>? _waveformData;
   // This will be used to pick the audio file
   String? _audioFilePath;
+  bool _isPlaying = false;
   double _amplitude = 0;
+  double _threshold = 50.0;
+  bool _isTextBlinking = false;
+
+  late Timer _waveformTimer;
   String _amplitudeResult = 'Unknown';
   final _audioAnalyzerPlugin = AudioAnalyzer();
-
+  late AnimationController _animationController;
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
     _waveformsController = PlayerController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
   }
 
   // Method to pick the audio file
@@ -49,6 +59,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
       await _audioPlayer.setFilePath(_audioFilePath!);
       await _audioPlayer.play();
 
+
       int lastCheckedTime = 0;
       List<int> amplitudes = await _audioAnalyzerPlugin.getAmplitudes(_audioFilePath!);
 
@@ -65,16 +76,18 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
             double amplitude = amplitudes[index].toDouble();
             setState(() {
               _amplitude = amplitude;
+              _isPlaying = true;
             });
+            _listenToMusicIntensity(_amplitude);
             print("Amplitude at ${position.inMilliseconds}ms: $amplitude");
           } else {
             print("Index out of range: $index");
           }
+
         }
       });
     }
   }
-
 
   Future<double> getAmplitudeAtTime(String path, Duration currentPosition) async {
     try {
@@ -101,6 +114,21 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
       print('Error getting amplitude: $e');
       return 0.0; // Trả về giá trị mặc định nếu có lỗi
     }
+  }
+  void _listenToMusicIntensity(double intensity) {
+    _waveformTimer = Timer.periodic(Duration(milliseconds: 100), (timer) async {
+      if (_isPlaying) {
+        if (intensity < _threshold) {
+          setState(() {
+            _isTextBlinking = true;
+          });
+        } else {
+          setState(() {
+            _isTextBlinking = false;
+          });
+        }
+      }
+    });
   }
 
 
@@ -135,6 +163,31 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
                   ),
                 ],
               ),
+            const SizedBox(height: 20),
+            AnimatedOpacity(
+              opacity: _isTextBlinking ? 1.0 : 0.0,
+              duration: Duration(milliseconds: 500),
+              child: Text(
+                "Synchronized Text",
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 20,
+                      color: Color.lerp(
+                        Colors.black,
+                        Colors.red,
+                        _animationController.value,
+                      )!,
+                      offset: Offset(5, 5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           ],
         ),
       ),
