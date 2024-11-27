@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:just_audio/just_audio.dart';
+
 class AudioAmplitudePage extends StatefulWidget {
   const AudioAmplitudePage({super.key});
 
@@ -23,7 +24,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
   String? _audioFilePath;
   bool _isPlaying = false;
   double _amplitude = 0;
-  double _threshold = 52.5;
+  double _threshold = 0;
   bool _isTextBlinking = false;
 
   late Timer _waveformTimer;
@@ -67,19 +68,19 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
         print("Current position: ${position.inMilliseconds}");
 
         // Kiểm tra mỗi 100ms
-        if (position.inMilliseconds - lastCheckedTime >= 100) {
+        if (position.inMilliseconds - lastCheckedTime >= 10) {
           lastCheckedTime = position.inMilliseconds;
 
           // Tính toán chỉ số biên độ
           int index = (position.inMilliseconds / 1000 * 40).floor(); // 40 mẫu/giây
           if (index < amplitudes.length) {
-            double amplitude = amplitudes[index].toDouble();
+            _amplitude = amplitudes[index].toDouble();
+            _threshold = amplitudes.reduce((a, b) => a > b ? a : b).toDouble() * 0.75;
             setState(() {
-              _amplitude = amplitude;
               _isPlaying = true;
             });
             _listenToMusicIntensity(_amplitude);
-            print("Amplitude at ${position.inMilliseconds}ms: $amplitude");
+            print("Amplitude at ${position.inMilliseconds}ms: $_amplitude");
           } else {
             print("Index out of range: $index");
           }
@@ -116,33 +117,30 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
     }
   }
   void _listenToMusicIntensity(double intensity) {
-    // Sử dụng Timer để kiểm tra biên độ định kỳ
-    _waveformTimer = Timer.periodic(Duration(milliseconds: 100), (timer) async {
-      if (_isPlaying) {
-        if (intensity < _threshold) {
-          // Nếu intensity dưới ngưỡng, bật nháy chữ và điều khiển AnimationController
-          if (!_isTextBlinking) {
-            setState(() {
-              _isTextBlinking = true; // Bật nháy
-            });
+    // Kiểm tra biên độ ngay lập tức mà không cần Timer
+    if (intensity < _threshold) {
+      // Nếu intensity dưới ngưỡng, bật nháy chữ và điều khiển AnimationController
+      if (!_isTextBlinking) {
+        setState(() {
+          _isTextBlinking = true; // Bật nháy
+        });
 
-            // Để đảm bảo nháy chỉ một lần, khởi động lại AnimationController
-            await _animationController.forward(from: 0.0);  // Khởi động hoạt ảnh từ đầu
-          }
-        } else {
-          // Khi intensity > threshold, tắt nháy
-          if (_isTextBlinking) {
-            setState(() {
-              _isTextBlinking = false;  // Tắt nháy
-            });
-
-            // Dừng hoạt ảnh khi intensity > threshold
-            _animationController.stop();
-          }
-        }
+        // Để đảm bảo nháy chỉ một lần, khởi động lại AnimationController
+        _animationController.forward(from: 0.0);  // Khởi động hoạt ảnh từ đầu
       }
-    });
+    } else {
+      // Khi intensity > threshold, tắt nháy
+      if (_isTextBlinking) {
+        setState(() {
+          _isTextBlinking = false;  // Tắt nháy
+        });
+
+        // Dừng hoạt ảnh khi intensity > threshold
+        _animationController.stop();
+      }
+    }
   }
+
   @override
   void dispose() {
     _audioPlayer.dispose();
@@ -177,7 +175,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
             const SizedBox(height: 20),
             AnimatedOpacity(
               opacity: _isTextBlinking ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 300),  // Để chữ nháy nhanh
+              duration: Duration(milliseconds: 100),  // Để chữ nháy nhanh
               child: Text(
                 "Synchronized Text",
                 style: TextStyle(
