@@ -23,7 +23,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
   String? _audioFilePath;
   bool _isPlaying = false;
   double _amplitude = 0;
-  double _threshold = 50.0;
+  double _threshold = 52.5;
   bool _isTextBlinking = false;
 
   late Timer _waveformTimer;
@@ -116,22 +116,33 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
     }
   }
   void _listenToMusicIntensity(double intensity) {
+    // Sử dụng Timer để kiểm tra biên độ định kỳ
     _waveformTimer = Timer.periodic(Duration(milliseconds: 100), (timer) async {
       if (_isPlaying) {
         if (intensity < _threshold) {
-          setState(() {
-            _isTextBlinking = true;
-          });
+          // Nếu intensity dưới ngưỡng, bật nháy chữ và điều khiển AnimationController
+          if (!_isTextBlinking) {
+            setState(() {
+              _isTextBlinking = true; // Bật nháy
+            });
+
+            // Để đảm bảo nháy chỉ một lần, khởi động lại AnimationController
+            await _animationController.forward(from: 0.0);  // Khởi động hoạt ảnh từ đầu
+          }
         } else {
-          setState(() {
-            _isTextBlinking = false;
-          });
+          // Khi intensity > threshold, tắt nháy
+          if (_isTextBlinking) {
+            setState(() {
+              _isTextBlinking = false;  // Tắt nháy
+            });
+
+            // Dừng hoạt ảnh khi intensity > threshold
+            _animationController.stop();
+          }
         }
       }
     });
   }
-
-
   @override
   void dispose() {
     _audioPlayer.dispose();
@@ -166,7 +177,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
             const SizedBox(height: 20),
             AnimatedOpacity(
               opacity: _isTextBlinking ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 500),
+              duration: Duration(milliseconds: 300),  // Để chữ nháy nhanh
               child: Text(
                 "Synchronized Text",
                 style: TextStyle(
@@ -176,18 +187,13 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
                   shadows: [
                     Shadow(
                       blurRadius: 20,
-                      color: Color.lerp(
-                        Colors.black,
-                        Colors.red,
-                        _animationController.value,
-                      )!,
+                      color: Colors.black,
                       offset: Offset(5, 5),
                     ),
                   ],
                 ),
               ),
-            ),
-
+            )
           ],
         ),
       ),
