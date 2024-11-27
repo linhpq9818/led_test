@@ -43,18 +43,24 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
 
   }
 
-  // Method to pick the audio file
-  // Method to pick the audio file
   Future<void> _pickAudioFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
-    if (result != null) {
+    // Sử dụng FilePicker để chọn file âm thanh
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['mp3', 'wav', 'm4a', 'aac'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      final filePath = result.files.single.path!;
       setState(() {
-        _audioFilePath = result.files.single.path;
+        _audioFilePath = filePath;
       });
-      // Load the waveform data
-      await _waveformsController.preparePlayer(path: _audioFilePath!);
+    } else {
+      // Người dùng đã hủy chọn file
+      debugPrint("Không có file âm thanh nào được chọn.");
     }
   }
+
   Future<void> _playAudio() async {
     if (_audioFilePath != null) {
       await _audioPlayer.setFilePath(_audioFilePath!);
@@ -65,7 +71,6 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
       List<int> amplitudes = await _audioAnalyzerPlugin.getAmplitudes(_audioFilePath!);
 
       _audioPlayer.positionStream.listen((position) {
-        print("Current position: ${position.inMilliseconds}");
 
         // Kiểm tra mỗi 100ms
         if (position.inMilliseconds - lastCheckedTime >= 10) {
@@ -75,12 +80,13 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
           int index = (position.inMilliseconds / 1000 * 40).floor(); // 40 mẫu/giây
           if (index < amplitudes.length) {
             _amplitude = amplitudes[index].toDouble();
-            _threshold = amplitudes.reduce((a, b) => a > b ? a : b).toDouble() * 0.75;
+            _threshold = amplitudes.reduce((a, b) => a > b ? a : b).toDouble() * 0.7;
             setState(() {
               _isPlaying = true;
             });
             _listenToMusicIntensity(_amplitude);
             print("Amplitude at ${position.inMilliseconds}ms: $_amplitude");
+            print('threshold at :${_amplitude} ms: $_threshold');
           } else {
             print("Index out of range: $index");
           }
@@ -106,6 +112,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
         });
 
         print('Amplitude at ${currentPosition.inMilliseconds}ms: $amplitude');
+
         return amplitude;
       } else {
         print('No amplitude data available at ${currentPosition.inMilliseconds}ms.');
@@ -124,8 +131,6 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
         setState(() {
           _isTextBlinking = true; // Bật nháy
         });
-
-        // Để đảm bảo nháy chỉ một lần, khởi động lại AnimationController
         _animationController.forward(from: 0.0);  // Khởi động hoạt ảnh từ đầu
       }
     } else {
@@ -175,7 +180,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
             const SizedBox(height: 20),
             AnimatedOpacity(
               opacity: _isTextBlinking ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 100),  // Để chữ nháy nhanh
+              duration: Duration(milliseconds: 10),  // Để chữ nháy nhanh
               child: Text(
                 "Synchronized Text",
                 style: TextStyle(
