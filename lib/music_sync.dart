@@ -39,7 +39,6 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
     if (result != null) {
       setState(() {
         _audioFilePath = result.files.single.path;
-        getAmplitude(_audioFilePath!);
       });
       // Load the waveform data
       await _waveformsController.preparePlayer(path: _audioFilePath!);
@@ -50,57 +49,60 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> {
       await _audioPlayer.setFilePath(_audioFilePath!);
       await _audioPlayer.play();
 
-      int lastCheckedTime = 0;  // Khởi tạo thời gian kiểm tra biên độ cuối cùng
+      int lastCheckedTime = 0;
+      List<int> amplitudes = await _audioAnalyzerPlugin.getAmplitudes(_audioFilePath!);
 
-      _audioPlayer.positionStream.listen((position) async {
-        // Kiểm tra giá trị position có trả về đúng không
+      _audioPlayer.positionStream.listen((position) {
         print("Current position: ${position.inMilliseconds}");
 
-        // Kiểm tra biên độ mỗi giây (1000ms)
+        // Kiểm tra mỗi 100ms
         if (position.inMilliseconds - lastCheckedTime >= 100) {
-          // Cập nhật thời gian kiểm tra biên độ cuối cùng
           lastCheckedTime = position.inMilliseconds;
 
-          // Lấy biên độ
-          double amplitude = await getAmplitude(_audioFilePath!);
-          setState(() {
-            _amplitude = amplitude;
-          });
-          print("Amplitude at ${position.inMilliseconds}ms: $_amplitude");
+          // Tính toán chỉ số biên độ
+          int index = (position.inMilliseconds / 1000 * 40).floor(); // 40 mẫu/giây
+          if (index < amplitudes.length) {
+            double amplitude = amplitudes[index].toDouble();
+            setState(() {
+              _amplitude = amplitude;
+            });
+            print("Amplitude at ${position.inMilliseconds}ms: $amplitude");
+          } else {
+            print("Index out of range: $index");
+          }
         }
       });
     }
   }
 
-  Future<double> getAmplitude(String path) async {
+
+  Future<double> getAmplitudeAtTime(String path, Duration currentPosition) async {
     try {
-      // Lấy biên độ từ plugin
+      // Gửi thời điểm hiện tại vào phương thức để lấy biên độ
       List<int> amplitudes = await _audioAnalyzerPlugin.getAmplitudes(path);
 
-      // Kiểm tra xem danh sách amplitudes có rỗng không
-      if (amplitudes.isEmpty) {
-        print('No amplitudes data available.');
-        return 0.0; // Nếu không có dữ liệu, trả về 0.0
+      // Lấy giá trị biên độ tại thời điểm cuối cùng
+      if (amplitudes.isNotEmpty) {
+        double amplitude = amplitudes.isNotEmpty ? amplitudes.last.toDouble() : 0.123;
+
+
+      // Cập nhật UI
+        setState(() {
+          _amplitudeResult = 'Amplitude at ${currentPosition.inMilliseconds}ms: $amplitude';
+        });
+
+        print('Amplitude at ${currentPosition.inMilliseconds}ms: $amplitude');
+        return amplitude;
+      } else {
+        print('No amplitude data available at ${currentPosition.inMilliseconds}ms.');
+        return 0.0;
       }
-
-      // Lấy giá trị biên độ cuối cùng
-      double amplitude = amplitudes.last.toDouble();
-
-      // Cập nhật UI với giá trị biên độ
-      setState(() {
-        _amplitudeResult = 'Amplitude: $amplitude';
-      });
-
-      print('Amplitude: $amplitude');
-      return amplitude;
     } on PlatformException catch (e) {
       print('Error getting amplitude: $e');
-      setState(() {
-        _amplitudeResult = 'Failed to get amplitude.';
-      });
       return 0.0; // Trả về giá trị mặc định nếu có lỗi
     }
   }
+
 
   @override
   void dispose() {

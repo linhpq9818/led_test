@@ -51,6 +51,14 @@
     <string>We need access to your camera</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>We need access to your microphone</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>App needs access to your audio files</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>App needs access to your microphone</string>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
 
 
 </dict>
