@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:ledbanner_test/banner_provider.dart';
-import 'package:ledbanner_test/led_banner_home.dart';
-import 'package:ledbanner_test/music_sycn_provider.dart';
-import 'package:ledbanner_test/music_sync.dart';
+import 'package:ledbanner_test/music/music_sycn_provider.dart';
+import 'package:ledbanner_test/music/music_sync.dart';
 import 'package:ledbanner_test/speed_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'banner_screen.dart';
-import 'music_test.dart';
-
 void main() {
   runApp(
     MultiProvider(

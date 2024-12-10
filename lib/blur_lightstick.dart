@@ -19,7 +19,7 @@ class  BlurStick extends StatefulWidget {
 class _BlurStickState extends State<BlurStick> {
   double linearProgress = 0.0;
   Uint8List? bytes; // This will store the processed image
-  String? fileName = "lightstick.png"; // Default asset file name
+  String? fileName = "lightstick_2.png"; // Default asset file name
   bool isProcessing = false;
   Uint8List? processedImage;
   bool isLoading = false;
@@ -59,15 +59,15 @@ class _BlurStickState extends State<BlurStick> {
       ),
       body: Center(
         child: DropShadow(
-          offset: Offset(20, 20),
-          color: Colors.red,
+          offset: Offset(25, 25),
+          color: Color(0xFF23BEFD),
           blurRadius: 10.0,
           opacity: 0.7 ,
           child: Column(
             children: [
               Image.asset(
                 'assets/images/$fileName',
-                height: 500,
+                height: 600,
                 width: double.infinity,
               ),
 

@@ -20,7 +20,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
   late AudioPlayer _audioPlayer;
   late PlayerController _waveformsController;
   List<double>? _waveformData;
-  // This will be used to pick the audio file
+
   String? _audioFilePath;
   bool _isPlaying = false;
   double _amplitude = 0;
@@ -38,13 +38,12 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
     _waveformsController = PlayerController();
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 500),
+      duration: Duration(milliseconds: 100),
     );
 
   }
 
   Future<void> _pickAudioFile() async {
-    // Sử dụng FilePicker để chọn file âm thanh
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['mp3', 'wav', 'm4a', 'aac'],
@@ -56,7 +55,6 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
         _audioFilePath = filePath;
       });
     } else {
-      // Người dùng đã hủy chọn file
       debugPrint("Không có file âm thanh nào được chọn.");
     }
   }
@@ -65,7 +63,6 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
     if (_audioFilePath != null) {
       await _audioPlayer.setFilePath(_audioFilePath!);
       await _audioPlayer.play();
-
 
       int lastCheckedTime = 0;
       List<int> amplitudes = await _audioAnalyzerPlugin.getAmplitudes(_audioFilePath!);
@@ -77,7 +74,7 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
           lastCheckedTime = position.inMilliseconds;
 
           // Tính toán chỉ số biên độ
-          int index = (position.inMilliseconds / 1000 * 40).floor(); // 40 mẫu/giây
+          int index = (position.inMilliseconds / 1000 * 40).floor();
           if (index < amplitudes.length) {
             _amplitude = amplitudes[index].toDouble();
             _threshold = amplitudes.reduce((a, b) => a > b ? a : b).toDouble() * 0.7;
@@ -96,51 +93,19 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
     }
   }
 
-  Future<double> getAmplitudeAtTime(String path, Duration currentPosition) async {
-    try {
-      // Gửi thời điểm hiện tại vào phương thức để lấy biên độ
-      List<int> amplitudes = await _audioAnalyzerPlugin.getAmplitudes(path);
-
-      // Lấy giá trị biên độ tại thời điểm cuối cùng
-      if (amplitudes.isNotEmpty) {
-        double amplitude = amplitudes.isNotEmpty ? amplitudes.last.toDouble() : 0.123;
-
-
-      // Cập nhật UI
-        setState(() {
-          _amplitudeResult = 'Amplitude at ${currentPosition.inMilliseconds}ms: $amplitude';
-        });
-
-        print('Amplitude at ${currentPosition.inMilliseconds}ms: $amplitude');
-
-        return amplitude;
-      } else {
-        print('No amplitude data available at ${currentPosition.inMilliseconds}ms.');
-        return 0.0;
-      }
-    } on PlatformException catch (e) {
-      print('Error getting amplitude: $e');
-      return 0.0; // Trả về giá trị mặc định nếu có lỗi
-    }
-  }
   void _listenToMusicIntensity(double intensity) {
-    // Kiểm tra biên độ ngay lập tức mà không cần Timer
     if (intensity < _threshold) {
-      // Nếu intensity dưới ngưỡng, bật nháy chữ và điều khiển AnimationController
       if (!_isTextBlinking) {
         setState(() {
-          _isTextBlinking = true; // Bật nháy
+          _isTextBlinking = true;
         });
-        _animationController.forward(from: 0.0);  // Khởi động hoạt ảnh từ đầu
+        _animationController.forward(from: 0.0);
       }
     } else {
-      // Khi intensity > threshold, tắt nháy
       if (_isTextBlinking) {
         setState(() {
-          _isTextBlinking = false;  // Tắt nháy
+          _isTextBlinking = false;
         });
-
-        // Dừng hoạt ảnh khi intensity > threshold
         _animationController.stop();
       }
     }
@@ -170,7 +135,6 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
               Column(
                 children: [
                   Text("Playing audio: $_amplitude"),
-                  // Button to start playing and printing amplitude
                   ElevatedButton(
                     onPressed: _playAudio,
                     child: const Text('Play Audio and Track Amplitude'),
@@ -180,8 +144,8 @@ class _AudioAmplitudePageState extends State<AudioAmplitudePage> with SingleTick
             const SizedBox(height: 20),
             AnimatedOpacity(
               opacity: _isTextBlinking ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 10),  // Để chữ nháy nhanh
-              child: Text(
+              duration: Duration(milliseconds: 10),
+              child: const Text(
                 "Synchronized Text",
                 style: TextStyle(
                   fontSize: 36,

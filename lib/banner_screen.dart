@@ -1,40 +1,53 @@
+import 'package:drop_shadow/drop_shadow.dart';
 import 'package:flutter/material.dart';
-import 'package:ledbanner_test/control_panel.dart';
-import 'package:provider/provider.dart';
-import 'banner_provider.dart';
 
-class BannerScreen extends StatelessWidget {
-  const BannerScreen({super.key});
+class HomePage extends StatelessWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final bannerProvider = Provider.of<BannerProvider>(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('LED Banner'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Center(
-              child: AnimatedBuilder(
-                animation: bannerProvider,
-                builder: (context, _) {
-                  return Text(
-                    'LED BANNER',
-                    style: TextStyle(
-                      fontSize: bannerProvider.fontSize,
-                      color: bannerProvider.textColor,
-                      fontFamily: bannerProvider.fontFamily,
-                    ),
-                  );
-                },
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropShadow(
+                child: Image.network(
+                  'https://images.pexels.com/photos/1191639/pexels-photo-1191639.jpeg',
+                  width: 250,
+                ),
               ),
-            ),
+              const SizedBox(height: 35),
+              DropShadow(
+                child: Container(
+                  height: 150,
+                  width: 250,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3366FF), Color(0xFF00CCFF)],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 35),
+              const DropShadow(
+                child: Text(
+                  'Ehuehuehueuhe',
+                  style: TextStyle(fontSize: 35, color: Colors.orange),
+                ),
+              ),
+              const DropShadow(
+                color: Colors.black,
+                child: Text(
+                  'Solid color drop shadow',
+                  style: TextStyle(fontSize: 35, color: Colors.orange),
+                ),
+              ),
+            ],
           ),
-          ControlsPanel(),
-        ],
+        ),
       ),
     );
   }

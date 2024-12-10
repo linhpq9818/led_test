@@ -35,7 +35,7 @@ class DropShadow extends StatelessWidget {
     left = (offset.dx.abs() + (blurRadius * 2)) * spread;
     right = (offset.dx.abs() + (blurRadius * 2)) * spread;
     top = (offset.dy.abs() + (blurRadius * 2)) * spread;
-    bottom =0;
+    bottom =(offset.dx.abs() + (blurRadius * 2)) * spread;
 
     return ClipRRect(
       child: Padding(
